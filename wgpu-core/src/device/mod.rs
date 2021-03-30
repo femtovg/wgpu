@@ -299,6 +299,19 @@ pub enum CreateDeviceError {
 }
 
 impl<B: GfxBackend> Device<B> {
+
+    // #[cfg(not(metal))]
+    pub fn start_capture(&self) {
+        self.raw.start_capture();
+    }
+
+    // #[cfg(not(metal))]
+    pub fn stop_capture(&self) {
+        self.raw.stop_capture();
+    }
+}
+
+impl<B: GfxBackend> Device<B> {
     #[allow(clippy::too_many_arguments)]
     pub(crate) fn new(
         raw: B::Device,
@@ -2983,6 +2996,28 @@ impl<G: GlobalIdentityHandlerFactory> Global<G> {
                 Err(e) => log::error!("Failed to wait for buffer {:?}: {:?}", buffer_id, e),
             }
         }
+    }
+
+    pub fn start_capture<B: GfxBackend>(
+        &self,
+        device_id: id::DeviceId,
+    ) {
+        let hub = B::hub(self);
+        let mut token = Token::root();
+        let (device_guard, mut token) = hub.devices.read(&mut token);
+        let device = device_guard.get(device_id).unwrap();
+        device.start_capture();
+    }
+
+    pub fn stop_capture<B: GfxBackend>(
+        &self,
+        device_id: id::DeviceId,
+    ) {
+        let hub = B::hub(self);
+        let mut token = Token::root();
+        let (device_guard, mut token) = hub.devices.read(&mut token);
+        let device = device_guard.get(device_id).unwrap();
+        device.stop_capture();
     }
 
     pub fn device_create_texture<B: GfxBackend>(
